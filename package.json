@@ -1,0 +1,58 @@
+{
+  "name": "amazon-affiliate-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server for Amazon product search & affiliate link generation across 20 countries. Enables LLM agents (Claude, Copilot, etc.) to recommend products and earn affiliate commissions.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "bin": {
+    "amazon-affiliate-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "smithery.yaml"
+  ],
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "amazon",
+    "affiliate",
+    "shopping",
+    "e-commerce",
+    "product-search",
+    "llm",
+    "ai-agent",
+    "claude",
+    "copilot",
+    "multi-country",
+    "amazon-associates"
+  ],
+  "homepage": "https://github.com/heikowagner/amazon-affiliate-mcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/heikowagner/amazon-affiliate-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/heikowagner/amazon-affiliate-mcp/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

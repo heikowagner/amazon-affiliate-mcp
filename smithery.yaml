@@ -1,0 +1,83 @@
+# Smithery MCP Registry – amazon-affiliate-mcp
+# https://smithery.ai
+#
+# This server enables LLM agents to search Amazon products and generate
+# affiliate links across 20 countries.
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    title: Amazon Affiliate MCP Configuration
+    description: Configure your Amazon affiliate tags for each country. Only configure the countries you have an active affiliate account for.
+    properties:
+      defaultCountry:
+        type: string
+        title: Default Country
+        description: "Default Amazon storefront to use when no country is specified. Supported: de, at, us, uk, fr, es, it, nl, pl, se, jp, ca, au, mx, br, in, sg, ae, sa, tr"
+        default: "de"
+        enum: ["de", "at", "us", "uk", "fr", "es", "it", "nl", "pl", "se", "jp", "ca", "au", "mx", "br", "in", "sg", "ae", "sa", "tr"]
+      affiliateTagDe:
+        type: string
+        title: German Affiliate Tag (amazon.de)
+        description: "Your Amazon.de affiliate tag, e.g. meinname-21"
+        default: ""
+      affiliateTagUs:
+        type: string
+        title: US Affiliate Tag (amazon.com)
+        description: "Your Amazon.com affiliate tag, e.g. myname-20"
+        default: ""
+      affiliateTagUk:
+        type: string
+        title: UK Affiliate Tag (amazon.co.uk)
+        description: "Your Amazon.co.uk affiliate tag, e.g. myname-21"
+        default: ""
+      affiliateTagFr:
+        type: string
+        title: French Affiliate Tag (amazon.fr)
+        description: "Your Amazon.fr affiliate tag"
+        default: ""
+      affiliateTagIt:
+        type: string
+        title: Italian Affiliate Tag (amazon.it)
+        description: "Your Amazon.it affiliate tag"
+        default: ""
+      affiliateTagEs:
+        type: string
+        title: Spanish Affiliate Tag (amazon.es)
+        description: "Your Amazon.es affiliate tag"
+        default: ""
+      affiliateTagCa:
+        type: string
+        title: Canada Affiliate Tag (amazon.ca)
+        description: "Your Amazon.ca affiliate tag"
+        default: ""
+      affiliateTagAu:
+        type: string
+        title: Australia Affiliate Tag (amazon.com.au)
+        description: "Your Amazon.com.au affiliate tag"
+        default: ""
+      affiliateTagJp:
+        type: string
+        title: Japan Affiliate Tag (amazon.co.jp)
+        description: "Your Amazon.co.jp affiliate tag"
+        default: ""
+    required: []
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "amazon-affiliate-mcp"],
+      env: {
+        AMAZON_DEFAULT_COUNTRY: config.defaultCountry || "de",
+        AMAZON_AFFILIATE_TAG:    config.affiliateTagDe || "",
+        AMAZON_AFFILIATE_TAG_DE: config.affiliateTagDe || "",
+        AMAZON_AFFILIATE_TAG_US: config.affiliateTagUs || "",
+        AMAZON_AFFILIATE_TAG_UK: config.affiliateTagUk || "",
+        AMAZON_AFFILIATE_TAG_FR: config.affiliateTagFr || "",
+        AMAZON_AFFILIATE_TAG_IT: config.affiliateTagIt || "",
+        AMAZON_AFFILIATE_TAG_ES: config.affiliateTagEs || "",
+        AMAZON_AFFILIATE_TAG_CA: config.affiliateTagCa || "",
+        AMAZON_AFFILIATE_TAG_AU: config.affiliateTagAu || "",
+        AMAZON_AFFILIATE_TAG_JP: config.affiliateTagJp || "",
+      }
+    })
