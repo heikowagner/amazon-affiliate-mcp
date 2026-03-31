@@ -46,7 +46,7 @@
   "homepage": "https://github.com/heikowagner/amazon-affiliate-mcp#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/heikowagner/amazon-affiliate-mcp.git"
+    "url": "git+https://github.com/heikowagner/amazon-affiliate-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/heikowagner/amazon-affiliate-mcp/issues"
