@@ -134,8 +134,12 @@ function buildBestsellerUrl(country?: string, category?: string): string {
 // ── Server-Factory ──────────────────────────────────────────────────────────────
 function createMcpServer() {
 const server = new McpServer({
-  name: "amazon-affiliate-mcp",
+  name: "amazon Affiliate MCP",
   version: "1.0.0",
+  description:
+    "Search Amazon products and generate affiliate links across 20 countries (DE, US, UK, FR, IT, ES, CA, AU, JP and more). " +
+    "Tools for product search, direct ASIN links, deals, bestsellers, gift finder, product comparison, promo content generation, and affiliate setup info. " +
+    "Ideal for AI agents that recommend products and earn commissions via Amazon Associates.",
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -143,30 +147,31 @@ const server = new McpServer({
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_search",
-  `Sucht Produkte auf Amazon in einem beliebigen Land und liefert einen fertigen Affiliate-Link zurück.
-Ideal für Produktempfehlungen in einer KI-Konversation.
-Verfügbare Länder: ${LAND_CODES.join(", ")}
-Verfügbare Kategorien: ${CATEGORY_KEYS}`,
+  `Search for products on Amazon in any supported country and return a ready-to-use affiliate link.
+  Use this tool whenever a user asks for product recommendations or shopping suggestions.
+  Supports optional category filtering and price range.
+  Available countries: ${LAND_CODES.join(", ")}
+  Available categories: ${CATEGORY_KEYS}`,
   {
-    query: z.string().min(1).describe("Suchbegriff (z.B. 'Bluetooth Headphones')"),
+    query: z.string().min(1).describe("Search term, e.g. 'Bluetooth headphones' or 'running shoes'"),
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop, z.B. de, us, uk, fr, it, es, jp, ca. Standard: ${DEFAULT_COUNTRY}`),
+      .describe(`Amazon storefront country code, e.g. de, us, uk, fr, it, es, jp, ca. Default: ${DEFAULT_COUNTRY}`),
     category: z
       .string()
       .optional()
-      .describe(`Produktkategorie, z.B. "${CATEGORY_KEYS}"`),
+      .describe(`Product category filter, e.g. "${CATEGORY_KEYS}"`),
     price_min: z
       .number()
       .min(0)
       .optional()
-      .describe("Mindestpreis (in der Landeswährung)"),
+      .describe("Minimum price in the local currency of the selected country"),
     price_max: z
       .number()
       .min(0)
       .optional()
-      .describe("Maximalpreis (in der Landeswährung)"),
+      .describe("Maximum price in the local currency of the selected country"),
   },
   async ({ query, country, category, price_min, price_max }) => {
     const land = getLand(country);
@@ -207,21 +212,22 @@ Verfügbare Kategorien: ${CATEGORY_KEYS}`,
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_product_link",
-  "Erzeugt einen Affiliate-Link zu einem Amazon-Produkt anhand der ASIN für ein beliebiges Amazon-Land.",
+  "Generate a direct Amazon affiliate link for a specific product using its ASIN. " +
+  "Use this when you already know the exact product (10-character ASIN) and want a clean, trackable link for any supported Amazon country.",
   {
     asin: z
       .string()
       .min(10)
       .max(10)
-      .describe("10-stellige Amazon ASIN (z.B. B08N5WRWNW)"),
+      .describe("10-character Amazon ASIN, e.g. B08N5WRWNW"),
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop, z.B. de, us, uk. Standard: ${DEFAULT_COUNTRY}`),
+      .describe(`Amazon storefront country code, e.g. de, us, uk. Default: ${DEFAULT_COUNTRY}`),
     product_name: z
       .string()
       .optional()
-      .describe("Produktname für die Ausgabe"),
+      .describe("Optional product name to include in the response for display purposes"),
   },
   async ({ asin, country, product_name }) => {
     const cleanAsin = asin.trim().toUpperCase();
@@ -257,17 +263,19 @@ server.tool(
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_deals",
-  "Findet aktuelle Amazon-Angebote in einem beliebigen Land und gibt Affiliate-Links zurück.",
+  "Get affiliate links to current Amazon deals and offers for any supported country. " +
+  "Supports flash deals (lightning), outlet discounts, warehouse (open-box) items, and Prime-exclusive offers. " +
+  "Great for sharing time-sensitive promotions that convert well.",
   {
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop. Standard: ${DEFAULT_COUNTRY}`),
+      .describe(`Amazon storefront country code. Default: ${DEFAULT_COUNTRY}`),
     deal_type: z
       .enum(["alle", "blitzangebote", "outlet", "warehouse", "prime"])
       .default("alle")
       .describe(
-        "Art des Angebots: alle | blitzangebote (zeitlich begrenzt) | outlet (reduziert) | warehouse (B-Ware) | prime"
+        "Type of deal: alle (all deals) | blitzangebote (lightning/flash deals) | outlet (clearance) | warehouse (open-box) | prime (Prime-exclusive)"
       ),
   },
   async ({ country, deal_type }) => {
@@ -309,17 +317,18 @@ server.tool(
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_bestsellers",
-  `Liefert den Affiliate-Link zur Bestseller-Liste einer Amazon-Kategorie für ein beliebiges Land.
-Kategorien: ${CATEGORY_KEYS}`,
+  `Return an affiliate link to the Amazon bestseller list for a specific category and country.
+  Bestseller links consistently outperform generic search links in click-through and conversion rates.
+  Available categories: ${CATEGORY_KEYS}`,
   {
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop. Standard: ${DEFAULT_COUNTRY}`),
+      .describe(`Amazon storefront country code. Default: ${DEFAULT_COUNTRY}`),
     category: z
       .string()
       .optional()
-      .describe("Kategorie, z.B. elektronik, bücher, spielzeug"),
+      .describe("Product category, e.g. elektronik (electronics), bücher (books), spielzeug (toys)"),
   },
   async ({ country, category }) => {
     const land = getLand(country);
@@ -353,27 +362,29 @@ Kategorien: ${CATEGORY_KEYS}`,
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_gift_finder",
-  "Erstellt personalisierte Geschenkideen-Links auf Amazon mit Affiliate-Tag für ein beliebiges Land.",
+  "Generate personalized Amazon gift idea links with affiliate tags for any country. " +
+  "Tailors search links based on recipient description, interests, budget range, and occasion. " +
+  "Always includes an Amazon gift card as a reliable fallback option.",
   {
     empfaenger: z
       .string()
       .min(1)
-      .describe("Empfänger-Beschreibung, z.B. 'Mann 40, sportbegeistert'"),
+      .describe("Description of the gift recipient, e.g. 'man 40, loves sports' or 'teenage girl into gaming'"),
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop. Standard: ${DEFAULT_COUNTRY}`),
-    budget_min: z.number().min(0).optional().describe("Mindestbudget (Landeswährung)"),
-    budget_max: z.number().min(0).optional().describe("Maximalbudget (Landeswährung)"),
+      .describe(`Amazon storefront country code. Default: ${DEFAULT_COUNTRY}`),
+    budget_min: z.number().min(0).optional().describe("Minimum budget in the local currency of the selected country"),
+    budget_max: z.number().min(0).optional().describe("Maximum budget in the local currency of the selected country"),
     interessen: z
       .array(z.string())
       .max(5)
       .optional()
-      .describe("Interessen/Hobbys, z.B. ['gaming', 'kochen', 'lesen']"),
+      .describe("List of interests or hobbies, e.g. ['gaming', 'cooking', 'reading'] (max 5)"),
     anlass: z
       .string()
       .optional()
-      .describe("Anlass, z.B. Geburtstag, Weihnachten, Hochzeit"),
+      .describe("Occasion for the gift, e.g. Birthday, Christmas, Wedding"),
   },
   async ({ empfaenger, country, budget_min, budget_max, interessen = [], anlass }) => {
     const land = getLand(country);
@@ -448,21 +459,23 @@ server.tool(
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_compare",
-  "Erstellt eine strukturierte Vergleichsansicht für 2–5 Amazon-Produkte mit Affiliate-Links für ein beliebiges Land.",
+  "Build a structured side-by-side comparison of 2–5 Amazon products with affiliate links for any supported country. " +
+  "Returns ranked product entries with names and affiliate URLs. " +
+  "Product comparisons increase engagement and click-through rates significantly.",
   {
     asins: z
       .array(z.string().length(10))
       .min(2)
       .max(5)
-      .describe("Liste von ASINs (je 10 Zeichen), z.B. ['B08N5WRWNW', 'B09G9FPHY6']"),
+      .describe("List of Amazon ASINs to compare (each exactly 10 characters), e.g. ['B08N5WRWNW', 'B09G9FPHY6']"),
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop. Standard: ${DEFAULT_COUNTRY}`),
+      .describe(`Amazon storefront country code. Default: ${DEFAULT_COUNTRY}`),
     produktnamen: z
       .array(z.string())
       .optional()
-      .describe("Optionale Produktnamen in gleicher Reihenfolge wie ASINs"),
+      .describe("Optional product names in the same order as the ASINs, used for display"),
   },
   async ({ asins, country, produktnamen = [] }) => {
     const land = getLand(country);
@@ -501,26 +514,28 @@ server.tool(
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_promo_content",
-  "Generiert fertige Werbetexte für Amazon-Produkte mit Affiliate-Link – optimiert für verschiedene Plattformen und Länder.",
+  "Generate ready-to-publish promotional content for Amazon products with embedded affiliate links. " +
+  "Supports Twitter/X, Instagram, blog (HTML), WhatsApp, Telegram, and newsletter (HTML email) formats. " +
+  "Output is available in German (de) and English (en) and includes mandatory affiliate disclosure text.",
   {
-    produktname: z.string().min(1).describe("Name des Produkts"),
+    produktname: z.string().min(1).describe("Name of the product to promote"),
     country: z
       .enum(LAND_CODES)
       .default(DEFAULT_COUNTRY)
-      .describe(`Amazon-Ländershop. Standard: ${DEFAULT_COUNTRY}`),
-    asin: z.string().length(10).optional().describe("Amazon ASIN (10 Zeichen)"),
+      .describe(`Amazon storefront country code. Default: ${DEFAULT_COUNTRY}`),
+    asin: z.string().length(10).optional().describe("Amazon ASIN (10 characters) for a direct product link"),
     suchbegriff: z
       .string()
       .optional()
-      .describe("Suchbegriff als Fallback wenn keine ASIN vorhanden"),
+      .describe("Search term fallback when no ASIN is available"),
     plattform: z
       .enum(["twitter", "instagram", "blog", "whatsapp", "telegram", "newsletter"])
-      .describe("Zielplattform für den Werbetext"),
+      .describe("Target platform for the promotional content"),
     sprache: z
       .enum(["de", "en"])
       .default("de")
-      .describe("Sprache: de (Deutsch) oder en (Englisch)"),
-    preis: z.string().optional().describe("Preis des Produkts, z.B. '29,99 $'"),
+      .describe("Output language: de (German) or en (English)"),
+    preis: z.string().optional().describe("Product price to include in the copy, e.g. '$29.99'"),
   },
   async ({ produktname, country, asin, suchbegriff, plattform, sprache, preis }) => {
     const url = asin
@@ -595,7 +610,8 @@ server.tool(
 // ─────────────────────────────────────────────────────────────────────────────
 server.tool(
   "amazon_affiliate_info",
-  "Gibt Informationen über das aktive Affiliate-Setup für alle Länder zurück: Tags, Domains, Provisionsstruktur und Tipps.",
+  "Return a full overview of the active Amazon affiliate configuration: configured tags per country, domains, currencies, commission rates, and best-practice tips. " +
+  "Use this to show users which countries are active or to diagnose missing affiliate tags.",
   {},
   async () => {
     const laenderInfo = Object.entries(LAENDER).map(([code, cfg]) => ({
