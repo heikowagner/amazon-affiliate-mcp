@@ -132,14 +132,26 @@ function buildBestsellerUrl(country?: string, category?: string): string {
 }
 
 // ── Server-Factory ──────────────────────────────────────────────────────────────
+const SERVER_DESCRIPTION =
+  "Search Amazon products and generate affiliate links across 20 countries " +
+  "(DE, US, UK, FR, IT, ES, CA, AU, JP and more). " +
+  "8 tools for product search, direct ASIN links, deals, bestsellers, gift finder, " +
+  "product comparison, promotional content generation, and affiliate setup info. " +
+  "Ideal for AI agents that recommend products and earn commissions via Amazon Associates.";
+
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#FF9900"/>
+  <path d="M16 20h4l5 18 5-13 5 13 5-18h4" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 46c5 3 12 5 20 5s15-2 20-5" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="46" r="2" fill="#fff"/>
+</svg>`;
+
 function createMcpServer() {
 const server = new McpServer({
-  name: "amazon Affiliate MCP",
+  name: "Amazon Affiliate MCP",
   version: "1.0.0",
-  description:
-    "Search Amazon products and generate affiliate links across 20 countries (DE, US, UK, FR, IT, ES, CA, AU, JP and more). " +
-    "Tools for product search, direct ASIN links, deals, bestsellers, gift finder, product comparison, promo content generation, and affiliate setup info. " +
-    "Ideal for AI agents that recommend products and earn commissions via Amazon Associates.",
+  description: SERVER_DESCRIPTION,
+  icons: [{ src: "/icon.svg", mimeType: "image/svg+xml", sizes: ["64x64"] }],
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -681,6 +693,28 @@ async function startHttp(port: number): Promise<void> {
     if (req.method === "GET" && req.url === "/health") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ status: "ok", server: "amazon-affiliate-mcp" }));
+      return;
+    }
+
+    // Icon
+    if (req.method === "GET" && req.url === "/icon.svg") {
+      res.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=86400" });
+      res.end(ICON_SVG);
+      return;
+    }
+
+    // Static server card for Smithery metadata discovery
+    if (req.method === "GET" && req.url === "/.well-known/mcp/server-card.json") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        serverInfo: {
+          name: "Amazon Affiliate MCP",
+          version: "1.0.0",
+          description: SERVER_DESCRIPTION,
+          icons: [{ src: "/icon.svg", mimeType: "image/svg+xml", sizes: ["64x64"] }],
+        },
+        authentication: { required: false },
+      }));
       return;
     }
 
