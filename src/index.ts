@@ -10,6 +10,8 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { z } from "zod";
 
 // ── Länder-Konfiguration ─────────────────────────────────────────────────────
@@ -129,7 +131,8 @@ function buildBestsellerUrl(country?: string, category?: string): string {
     : `${land.domain}/bestsellers?tag=${land.tag}`;
 }
 
-// ── Server ────────────────────────────────────────────────────────────────────
+// ── Server-Factory ──────────────────────────────────────────────────────────────
+function createMcpServer() {
 const server = new McpServer({
   name: "amazon-affiliate-mcp",
   version: "1.0.0",
@@ -645,15 +648,63 @@ server.tool(
   }
 );
 
+  return server;
+}
+
+// ── Smithery Sandbox (für Tool-Scanning beim Publish) ─────────────────────────
+export function createSandboxServer() {
+  return createMcpServer();
+}
+
+// ── HTTP-Modus ────────────────────────────────────────────────────────────────
+async function startHttp(port: number): Promise<void> {
+  const aktiveTagAnzahl = Object.values(LAENDER).filter((l) => l.tag.length > 0).length;
+
+  const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    // Health-check für Railway / Smithery
+    if (req.method === "GET" && req.url === "/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "ok", server: "amazon-affiliate-mcp" }));
+      return;
+    }
+
+    if (req.url === "/mcp") {
+      const mcpServer = createMcpServer();
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined, // stateless
+      });
+      await mcpServer.connect(transport);
+      await transport.handleRequest(req, res);
+      return;
+    }
+
+    res.writeHead(404);
+    res.end();
+  });
+
+  httpServer.listen(port, () => {
+    process.stderr.write(
+      `Amazon Affiliate MCP HTTP Server auf Port ${port} | ${aktiveTagAnzahl}/${Object.keys(LAENDER).length} Länder konfiguriert | Standard: ${DEFAULT_COUNTRY}\n`
+    );
+  });
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  // Logs gehen auf stderr – stdout ist für MCP reserviert
-  const aktiveTagAnzahl = Object.values(LAENDER).filter((l) => l.tag.length > 0).length;
-  process.stderr.write(
-    `Amazon Affiliate MCP Server gestartet | ${aktiveTagAnzahl}/${Object.keys(LAENDER).length} Länder konfiguriert | Standard: ${DEFAULT_COUNTRY}\n`
-  );
+  const mode = process.env.MCP_MODE ?? (process.env.PORT ? "http" : "stdio");
+
+  if (mode === "http") {
+    const port = Number(process.env.PORT ?? 3000);
+    await startHttp(port);
+  } else {
+    const server = createMcpServer();
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    const aktiveTagAnzahl = Object.values(LAENDER).filter((l) => l.tag.length > 0).length;
+    process.stderr.write(
+      `Amazon Affiliate MCP Server gestartet | ${aktiveTagAnzahl}/${Object.keys(LAENDER).length} Länder konfiguriert | Standard: ${DEFAULT_COUNTRY}\n`
+    );
+  }
 }
 
 main().catch((err) => {
