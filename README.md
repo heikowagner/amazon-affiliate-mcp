@@ -42,7 +42,123 @@ npm run build
 
 ---
 
+## Self-Hosting auf eigenem Server (z.B. www.add-ons.de)
+
+Ja, du kannst diesen MCP auf deinem eigenen Server unter deiner Domain betreiben.
+
+Wichtig: Auf einem normalen VPS musst du explizit HTTP-Modus aktivieren.
+
+### 1) Build auf dem Server
+
+```bash
+cd /opt/amazon-affiliate-mcp
+npm ci
+npm run build
+```
+
+### 2) Systemd-Service anlegen
+
+Datei: `/etc/systemd/system/amazon-affiliate-mcp.service`
+
+```ini
+[Unit]
+Description=Amazon Affiliate MCP HTTP Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/amazon-affiliate-mcp
+Environment=NODE_ENV=production
+Environment=MCP_MODE=http
+Environment=PORT=3000
+Environment=AMAZON_DEFAULT_COUNTRY=de
+Environment=AMAZON_AFFILIATE_TAG_DE=deintag-21
+Environment=AMAZON_AFFILIATE_TAG=deintag-21
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Service starten:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now amazon-affiliate-mcp
+sudo systemctl status amazon-affiliate-mcp
+```
+
+### 3) Nginx als Reverse Proxy für www.add-ons.de
+
+Datei: `/etc/nginx/sites-available/www.add-ons.de`
+
+```nginx
+server {
+  listen 80;
+  server_name www.add-ons.de;
+
+  location /mcp {
+    proxy_pass http://127.0.0.1:3000/mcp;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location /health {
+    proxy_pass http://127.0.0.1:3000/health;
+    proxy_set_header Host $host;
+  }
+
+  location /.well-known/mcp/server-card.json {
+    proxy_pass http://127.0.0.1:3000/.well-known/mcp/server-card.json;
+    proxy_set_header Host $host;
+  }
+
+  location /icon.svg {
+    proxy_pass http://127.0.0.1:3000/icon.svg;
+    proxy_set_header Host $host;
+  }
+}
+```
+
+Aktivieren:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/www.add-ons.de /etc/nginx/sites-enabled/www.add-ons.de
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 4) TLS-Zertifikat (Let's Encrypt)
+
+```bash
+sudo certbot --nginx -d www.add-ons.de
+```
+
+### 5) Funktion testen
+
+```bash
+curl -i https://www.add-ons.de/health
+curl -i https://www.add-ons.de/.well-known/mcp/server-card.json
+```
+
+Wenn beides mit 200 antwortet, ist dein MCP öffentlich erreichbar unter:
+
+- `https://www.add-ons.de/mcp`
+- `https://www.add-ons.de/.well-known/mcp/server-card.json`
+
+Hinweis: Falls du die Root-Domain ohne `www` nutzen willst, ergänze in Nginx zusätzlich `add-ons.de` im `server_name` und im Zertifikat.
+
+---
+
 ## In Claude Desktop einbinden
+
+### Lokal (stdio mode)
 
 Bearbeite `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
@@ -61,6 +177,22 @@ Bearbeite `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```
 
 Ersetze `DEIN_BENUTZERNAME` mit deinem macOS-Benutzernamen (`whoami` im Terminal).
+
+### HTTP Remote (www.add-ons.de)
+
+Bearbeite `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "amazon-affiliate": {
+      "url": "https://www.add-ons.de/mcp"
+    }
+  }
+}
+```
+
+Diesen Weg kannst du auch für andere MCP-Clients verwenden (GitHub Copilot, VSCode, etc.).
 
 ---
 

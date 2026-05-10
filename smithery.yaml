@@ -3,6 +3,15 @@
 #
 # This server enables LLM agents to search Amazon products and generate
 # affiliate links across 20 countries.
+#
+# Deployment: https://www.add-ons.de/mcp
+# Health: https://www.add-ons.de/health
+# Metadata: https://www.add-ons.de/.well-known/mcp/server-card.json
+
+httpEndpoint:
+  url: "https://www.add-ons.de/mcp"
+  authentication:
+    type: none
 
 startCommand:
   type: stdio
